@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的软件库</title>
+    <style>
+        /* --- 全局设置 --- */
+        :root {
+            --primary: #3b82f6;
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            padding-bottom: 50px;
+        }
+
+        /* --- 顶部区域 --- */
+        header {
+            background: var(--card-bg);
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 顶部导航栏 */
+        .nav-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            margin-bottom: 15px;
+        }
+        h1 { font-size: 20px; font-weight: 700; color: var(--text-main); }
+        
+        .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+
+        .about-link, .contact-link {
+            font-size: 14px;
+            color: var(--primary);
+            text-decoration: none;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        /* 顶部中间访问统计 */
+        .visit-view {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 13px;
+            color: #94a3b8;
+            background:#f0f4fc;
+            padding:3px 12px;
+            border-radius:30px;
+        }
+        .visit-num{
+            color:#3b82f6;
+            font-weight:bold;
+        }
+
+        /* --- 搜索框 --- */
+        .search-box { margin-bottom: 15px; }
+        .search-box input {
+            width: 100%;
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .search-box input:focus {
+            border-color: var(--primary);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        /* --- 分类按钮组 --- */
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+            scrollbar-width: none;
+        }
+        .filter-group::-webkit-scrollbar { display: none; }
+        .filter-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-sub);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* --- 列表区域 --- */
+        .list-container { max-width: 600px; margin: 20px auto 0; padding: 0 15px; }
+        .card-item { margin-bottom: 15px; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .card-header { display: flex; justify-content: space-between; align-items: center; }
+        .card-index { font-size: 12px; color: var(--text-sub); background: var(--bg); padding: 2px 6px; border-radius: 4px; }
+        .card-title { font-size: 17px; font-weight: 600; margin: 0; }
+        .card-desc { font-size: 14px; color: var(--text-sub); line-height: 1.5; }
+        .download-btn {
+            display: block; width: 100%; text-align: center; background: var(--primary);
+            color: white; text-decoration: none; padding: 10px 0; border-radius: 10px;
+            font-size: 14px; font-weight: 500; margin-top: 5px;
+        }
+        .no-result { text-align: center; color: var(--text-sub); margin-top: 50px; display: none; }
+
+        /* --- 弹窗样式 (Modal) --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px);
+            z-index: 1000; display: none; justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .modal-overlay.show { display: flex; opacity: 1; }
+        
+        .modal-content {
+            background: rgba(255, 255, 255, 0.95);
+            width: 90%; max-width: 400px;
+            padding: 30px; border-radius: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            text-align: center; position: relative;
+            transform: scale(0.9); transition: transform 0.3s;
+        }
+        .modal-overlay.show .modal-content { transform: scale(1); }
+
+        .modal-close {
+            position: absolute; top: 15px; right: 15px;
+            background: none; border: none; font-size: 24px;
+            color: var(--text-sub); cursor: pointer; padding: 0 5px;
+        }
+        .modal-title { font-size: 20px; font-weight: bold; margin-bottom: 15px; color: var(--text-main); }
+        .modal-text { font-size: 14px; color: var(--text-sub); line-height: 1.8; text-align: left; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <!-- 顶部导航 -->
+        <div class="nav-top">
+            <h1>我的软件库</h1>
+
+            <!-- 真实访问统计 -->
+            <div class="visit-view">
+                本站访问：<span class="visit-num" id="visitCount">0</span> 次
+            </div>
+
+            <!-- 右侧：关于我们 + 联系客服 -->
+            <div class="nav-links">
+                <span class="about-link" onclick="openModal('about')">关于我们</span>
+                <span class="contact-link" onclick="openModal('contact')">联系客服</span>
+            </div>
+        </div>
+        
+        <!-- 搜索框 -->
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="搜索软件名称...">
+        </div>
+
+        <!-- 分类按钮 -->
+        <div class="filter-group">
+            <button class="filter-btn active" onclick="filterSelection('all', this)">全部</button>
+            <button class="filter-btn" onclick="filterSelection('kai', this)">开车</button>
+            <button class="filter-btn" onclick="filterSelection('ke', this)">科学</button>
+            <button class="filter-btn" onclick="filterSelection('ying', this)">影视</button>
+        </div>
+    </header>
+
+    <div class="list-container" id="appList">
+
+        <!-- ========== 开车类 kai 6个 ========== -->
+        <div class="card-item" data-category="kai">
+            <div class="card">
+                <div class="card-header"><span class="card-index">01 / KAI_CHE</span></div>
+                <h3 class="card-title">极品飞车</h3>
+                <p class="card-desc">一款经典的赛车竞速游戏，画质高清流畅。</p>
+                <a href="#" class="download-btn">点击下载</a>
+            </div>
+        </div>
+
+        <div class="card-item" data-category="kai">
+            <div class="card">
+                <div class="card-header"><span class="card-index">02 / KAI_CHE</span></div>
+                <h3 class="card-title">狂野飙车9</h3>
+                <p class="card-desc">超高画质竞速赛车，跑车种类超多。</p>
+                <a href="#" class="download-btn">点击下载</a>
+            </div>
+        </div>
+
+        <div class="card-item" data-category="kai">
+            <div class="card">
+                <div class="card-header"><span class="card-index">03 / KAI_CHE</span></div>
+                <h3 class="card-title">模拟驾驶3D</h3>
+                <p class="card-desc">真实汽车驾驶模拟，练车专用软件。</p>
+                <a href="#" class="download-btn">点击下载</a>
+            </div>
+        </div>
+
+        <div class="card-item" data-category="kai">
+            <div class="card">
+                <div class="card-header"><span class="card-index">04 / KAI_CHE</span></div>
+                <h3 class="card-title">卡车模拟器</h3>
+                <p class="card-desc">大型卡车运输驾驶，真实路况模拟。</p>
+                <a href="#" class="download-btn">点击下载</a>
+            </div>
+        </div>
+
+        <div class="card-item" data-category="kai">
+            <div class="card">
+                <div class="card-header"><span class="card-index">05 / KAI_CHE</span></div>
+                <h3 class="card-title">摩托车竞速</h3>
+                <p class="card-desc">摩托赛车竞速，速度感拉满。</p>
+                <a href="#" class="download-btn">点击下载</a>
+            </div>
+        </div>
+
+        <div class="card-item" data-category="kai">
+            <div class="card">
+                <div class="card-header"><span class="card-index">06 / KAI_CHE</span></div>
+                <h3 class="card-title">城市飞车</h3>
+                <p class="card-desc">城市街头自由飙车，无限制行驶。</p>
+                <a href="#" class="download-btn">点击下载</a>
+            </div>
+        </div>
+
+        <!-- ========== 科学类 ke 6个 ========== -->
+        <div class="card-item" data-category="ke">
+            <div class="card">
+                <div class="card-header"><span class="card-index">01 / KE_XUE</span></div>
+                <h3 class="card-title">星空浏览器</h3>
+                <p class="card-desc">探索未知的网络世界，功能强大。</p>
+                <a href="#" class="download-btn">点击下载</a>
+            </div>
+        </div>
+
+        <div class="card-item" data-category="ke">
+            <div class="card">
+                <div class="card-header"><span class="card-index">02 / KE_XUE</span></div>
+                <h3 class="card-title">光速浏览器</h3>
+                <p class="card-desc">极速访问全网，无限制浏览。</p>
+                <a href="#" class="download-btn">点击下载</a>
+            </div>
+        </div>
+
+        <div class="card-item" data-category="ke">
+            <div class="card">
+                <div class="card-header"><span class="card-index">03 / KE_XUE</span></div>
+                <h3 class="card-title">极光浏览</h3>
+                <p class="card-desc">纯净无广告，全网随意访问。</p>
+                <a href="#" class="download-btn">点击下载</a>
+            </div>
+        </div>
+
+        <div class="card-item" data-category="ke">
+            <div class="card">
+                <div class="card-header"><span class="card-index">04 / KE_XUE</span></div>
+                <h3 class="card-title">追风浏览器</h3>
+                <p class="card-desc">体积小巧，打开速度超快。</p>
+                <a href="#" class="download-btn">点击下载</a>
+            </div>
+        </div>
+
+        <div class="card-item" data-category="ke">
+            <div class="card">
+                <div class="card-header"><span class="card-index">05 / KE_XUE</span></div>
+                <h3 class="card-title">随心浏览</h3>
+                <p class="card-desc">自由访问各类网站，简单好用。</p>
+                <a href="#" class="download-btn">点击下载</a>
+            </div>
+        </div>
+
+        <div class="card-item" data-category="ke">
+            <div class="card">
+                <div class="card-header"><span class="card-index">06 / KE_XUE</span></div>
+                <h3 class="card-title">万能搜索器</h3>
+                <p class="card-desc">全网资源一键搜索查找。</p>
+                <a href="#" class="download-btn">点击下载</a>
+            </div>
+        </div>
+
+        <!-- ========== 影视类 ying 6个 ========== -->
+        <div class="card-item" data-category="ying">
+            <div class="card">
+                <div class="card-header"><span class="card-index">01 / YING_SHI</span></div>
+                <h3 class="card-title">月光影院</h3>
+                <p class="card-desc">海量高清电影电视剧，免费观看。</p>
+                <a href="#" class="download-btn">点击下载</a>
+            </div>
+        </div>
+
+        <div class="card-item" data-category="ying">
+            <div class="card">
+                <div class="card-header"><span class="card-index">02 / YING_SHI</span></div>
+                <h3 class="card-title">清风影视</h3>
+                <p class="card-desc">全网影视汇聚，更新速度快。</p>
+                <a href="#" class="download-btn">点击下载</a>
+            </div>
+        </div>
+
+        <div class="card-item" data-category="ying">
+            <div class="card">
+                <div class="card-header"><span class="card-index">03 / YING_SHI</span></div>
+                <h3 class="card-title">云海视频</h3>
+                <p class="card-desc">超清画质播放，无广告打扰。</p>
+                <a href="#" class="download-btn">点击下载</a>
+            </div>
+        </div>
+
+        <div class="card-item" data-category="ying">
+            <div class="card">
+                <div class="card-header"><span class="card-index">04 / YING_SHI</span></div>
+                <h3 class="card-title">动漫乐园</h3>
+                <p class="card-desc">全网动漫番剧实时更新。</p>
+                <a href="#" class="download-btn">点击下载</a>
+            </div>
+        </div>
+
+        <div class="card-item" data-category="ying">
+            <div class="card">
+                <div class="card-header"><span class="card-index">05 / YING_SHI</span></div>
+                <h3 class="card-title">追剧神器</h3>
+                <p class="card-desc">热门剧集一键追剧，超清画质。</p>
+                <a href="#" class="download-btn">点击下载</a>
+            </div>
+        </div>
+
+        <div class="card-item" data-category="ying">
+            <div class="card">
+                <div class="card-header"><span class="card-index">06 / YING_SHI</span></div>
+                <h3 class="card-title">蓝光影院</h3>
+                <p class="card-desc">蓝光4K画质，观影体验极佳。</p>
+                <a href="#" class="download-btn">点击下载</a>
+            </div>
+        </div>
+
+        <div id="noResult" class="no-result">没有找到相关软件</div>
+    </div>
+
+    <!-- 关于我们弹窗 -->
+    <div class="modal-overlay" id="aboutModal" onclick="closeModal(event)">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModalBtn()">×</button>
+            <div class="modal-title">关于我们</div>
+            <div class="modal-text">
+                梦之音 / 梦之城表情站 / 软件 / 源码 / 表情包 / 壁纸 / Clousx6词库 / 各大游戏攻略。<br><br>
+                梦之音提供软件开发和二次元表情包，梦之城表情站。其次不定时发放福利和发布二次元壁纸或表情包，和常用软件，欢迎大家关注！
+            </div>
+        </div>
+    </div>
+
+    <!-- 联系客服弹窗 -->
+    <div class="modal-overlay" id="contactModal" onclick="closeModal(event)">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModalBtn()">×</button>
+            <div class="modal-title">联系客服</div>
+            <div class="modal-text">
+                 客服QQ：337974216<br>
+                 官方QQ群：736963769<br>
+                 联系邮箱：leiwen_0206@qq.com<br><br>
+               在线时间：周一至周日 10:00-22:00，我们会尽快回复！
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== 真实访问统计 =====
+        fetch('https://api visitors.vercel.app/api/count?url='+location.href)
+        .then(res=>res.json())
+        .then(data=>{
+            document.getElementById("visitCount").innerText = data.count;
+        })
+
+        // --- 弹窗逻辑 ---
+        const aboutModal = document.getElementById('aboutModal');
+        const contactModal = document.getElementById('contactModal');
+
+        function openModal(type) {
+            if(type === 'about'){
+                aboutModal.classList.add('show');
+            } else if(type === 'contact'){
+                contactModal.classList.add('show');
+            }
+        }
+
+        function closeModal(e) { 
+            if (e.target === aboutModal) aboutModal.classList.remove('show'); 
+            if (e.target === contactModal) contactModal.classList.remove('show'); 
+        }
+
+        function closeModalBtn() { 
+            aboutModal.classList.remove('show'); 
+            contactModal.classList.remove('show'); 
+        }
+
+        // --- 筛选与搜索逻辑 ---
+        function filterSelection(category, btnElement) {
+            const cards = document.getElementsByClassName("card-item");
+            const buttons = document.getElementsByClassName("filter-btn");
+            for (let btn of buttons) btn.classList.remove("active");
+            btnElement.classList.add("active");
+
+            for (let i = 0; i < cards.length; i++) {
+                const card = cards[i];
+                const cardCat = card.getAttribute("data-category");
+                if (category === "all" || cardCat === category) {
+                    card.style.display = "block";
+                } else {
+                    card.style.display = "none";
+                }
+            }
+            checkNoResult();
+        }
+
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', function(e) {
+            const keyword = e.target.value.toLowerCase();
+            const cards = document.getElementsByClassName("card-item");
+            for (let i = 0; i < cards.length; i++) {
+                const card = cards[i];
+                const title = card.querySelector(".card-title").innerText.toLowerCase();
+                const desc = card.querySelector(".card-desc").innerText.toLowerCase();
+                if (title.includes(keyword) || desc.includes(keyword)) {
+                    card.style.display = "block";
+                } else {
+                    card.style.display = "none";
+                }
+            }
+            checkNoResult();
+        });
+
+        function checkNoResult() {
+            const cards = document.querySelectorAll('.card-item');
+            const noResult = document.getElementById('noResult');
+            let visibleCount = 0;
+            cards.forEach(card => { if (card.style.display !== 'none') visibleCount++; });
+            noResult.style.display = visibleCount === 0 ? 'block' : 'none';
+        }
+    </script>
+</body>
+</html>
